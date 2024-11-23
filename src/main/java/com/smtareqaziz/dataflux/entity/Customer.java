@@ -2,10 +2,12 @@ package com.smtareqaziz.dataflux.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "customers_info")
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Customer {
