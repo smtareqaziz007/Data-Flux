@@ -19,6 +19,7 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
@@ -34,10 +35,9 @@ public class BatchConfig {
 
     @Bean
     @StepScope
-    // if not nullable?
-    public FlatFileItemReader<Customer> itemReader(@Nullable @Value("#{jobParameters['fileName']}") String fileName) {
+    public FlatFileItemReader<Customer> itemReader(@Value("#{jobParameters['fileName']}") String fileName) {
         FlatFileItemReader<Customer> reader = new FlatFileItemReader<>();
-        reader.setResource(new FileSystemResource("src/main/resources/" + fileName));
+        reader.setResource(new ClassPathResource(fileName));
         reader.setName("csvReader");
         reader.setLinesToSkip(1);
         reader.setLineMapper(lineMapper());

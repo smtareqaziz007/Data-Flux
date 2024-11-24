@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.concurrent.CompletableFuture;
+
 @RestController
 @RequestMapping("/launch")
 @RequiredArgsConstructor
@@ -25,6 +27,13 @@ public class JobController {
                 .addLong("startAt" , System.currentTimeMillis())
                 .toJobParameters();
 
-        jobLauncher.run(job, jobParameters);
+        // another way to achieve this by configuring JobLauncher and assign an TaskExecutor to it
+        CompletableFuture.runAsync(()-> {
+            try {
+                jobLauncher.run(job ,jobParameters);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
