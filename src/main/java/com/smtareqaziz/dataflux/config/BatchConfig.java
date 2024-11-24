@@ -3,8 +3,10 @@ package com.smtareqaziz.dataflux.config;
 import com.smtareqaziz.dataflux.entity.Customer;
 import com.smtareqaziz.dataflux.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
+import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.data.RepositoryItemWriter;
@@ -52,12 +54,18 @@ public class BatchConfig {
     }
 
     @Bean
-    public Step ioStep(DataSourceTransactionManager transactionManager){
+    public Step getStep(){
         return new StepBuilder("ioStep" , jobRepository)
                 .<Customer, Customer>chunk(100, platformTransactionManager)
                 .reader(itemReader())
                 .processor(itemProcessor())
                 .writer(itemWriter())
+                .build();
+    }
+
+    public Job getJob(){
+        return new JobBuilder("readWriteJob" , jobRepository)
+                .start(getStep())
                 .build();
     }
 
