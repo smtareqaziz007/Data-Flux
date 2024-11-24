@@ -2,9 +2,11 @@ package com.smtareqaziz.dataflux.config;
 
 import com.smtareqaziz.dataflux.entity.Customer;
 import com.smtareqaziz.dataflux.repository.CustomerRepository;
+import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -14,6 +16,7 @@ import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -30,9 +33,11 @@ public class BatchConfig {
     private final CustomerRepository customerRepository;
 
     @Bean
-    public FlatFileItemReader<Customer> itemReader(){
+    @StepScope
+    // if not nullable?
+    public FlatFileItemReader<Customer> itemReader(@Nullable @Value("#{jobParameters['fileName']}") String fileName) {
         FlatFileItemReader<Customer> reader = new FlatFileItemReader<>();
-        reader.setResource(new FileSystemResource("src/main/resources/customers.csv"));
+        reader.setResource(new FileSystemResource("src/main/resources/" + fileName));
         reader.setName("csvReader");
         reader.setLinesToSkip(1);
         reader.setLineMapper(lineMapper());
@@ -55,8 +60,8 @@ public class BatchConfig {
     @Bean
     public Step getStep(){
         return new StepBuilder("ioStep" , jobRepository)
-                .<Customer, Customer>chunk(10, platformTransactionManager)
-                .reader(itemReader())
+                .<Customer, Customer>chunk(100, platformTransactionManager)
+                .reader(itemReader(null))
                 .processor(itemProcessor())
                 .writer(itemWriter())
                 .taskExecutor(getTaskExecutor())

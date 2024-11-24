@@ -34,3 +34,4 @@ build/
 
 #Projects
 .env
+customers100K.csv
