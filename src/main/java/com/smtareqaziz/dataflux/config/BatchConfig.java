@@ -17,6 +17,8 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
 
 @Configuration
@@ -57,6 +59,7 @@ public class BatchConfig {
                 .reader(itemReader())
                 .processor(itemProcessor())
                 .writer(itemWriter())
+                .taskExecutor(getTaskExecutor())
                 .build();
     }
 
@@ -65,6 +68,16 @@ public class BatchConfig {
         return new JobBuilder("readWriteJob" , jobRepository)
                 .start(getStep())
                 .build();
+    }
+
+    @Bean
+    public TaskExecutor getTaskExecutor(){
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(10);
+        executor.setMaxPoolSize(20);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("taskExecutor");
+        return executor;
     }
 
     private LineMapper<Customer> lineMapper() {
