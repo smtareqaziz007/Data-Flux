@@ -2,25 +2,28 @@ package com.smtareqaziz.dataflux.config;
 
 import com.smtareqaziz.dataflux.entity.Customer;
 import com.smtareqaziz.dataflux.repository.CustomerRepository;
-import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.support.TaskExecutorJobLauncher;
 import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.builder.StepBuilder;
+import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -69,10 +72,34 @@ public class BatchConfig {
     }
 
     @Bean
+    public Step getTasklet(){
+        return new StepBuilder("tasklet" , jobRepository)
+                .tasklet(new Tasklet() {
+
+                    @Override
+                    public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) throws Exception {
+                        System.out.println("************************************************  tasklet step *********************************************************************");
+                        return RepeatStatus.FINISHED;
+                    }
+                } , platformTransactionManager)
+                .build();
+    }
+
+    @Bean
     public Job getJob(){
         return new JobBuilder("readWriteJob" , jobRepository)
-                .start(getStep())
+                .start(getStep()) // TODO: See if I can run another step in parallel & conditional steps
+                .next(getTasklet())
                 .build();
+    }
+
+    @Bean(name = "customJobLauncher")
+    public TaskExecutorJobLauncher getJobLauncher() throws Exception {
+        TaskExecutorJobLauncher jobLauncher = new TaskExecutorJobLauncher();
+        jobLauncher.setTaskExecutor(getTaskExecutor());
+        jobLauncher.setJobRepository(jobRepository);
+        jobLauncher.afterPropertiesSet();
+        return jobLauncher;
     }
 
     @Bean
