@@ -17,6 +17,7 @@ public class JobController {
     private final JobLauncher jobLauncher;
     private final Job job;
 
+    // NOTE: Spring batch provides a default JobLauncher. Instead of that we want to use our customJobLauncher
     public JobController(@Qualifier("customJobLauncher") JobLauncher jobLauncher, Job job) {
         this.jobLauncher = jobLauncher;
         this.job = job;
@@ -30,6 +31,7 @@ public class JobController {
                 .addLong("startAt" , System.currentTimeMillis())
                 .toJobParameters();
 
+        //NOTE: By using customJobLauncher we are running asynchronously
         jobLauncher.run(job ,jobParameters);
     }
 }
